@@ -91,12 +91,12 @@ class _AuthScreenState extends State<AuthScreen> {
               Stack(
                 children: [
                    Container(
-                /*margin: const EdgeInsets.only(
+                margin: const EdgeInsets.only(
                   top: 30,
                   bottom: 20,
                   left: 20,
                   right: 20,
-                ),*/
+                ),
                 
                 decoration: const BoxDecoration(
                   
@@ -104,8 +104,8 @@ class _AuthScreenState extends State<AuthScreen> {
                         image: AssetImage('assets/images/pxfuel.jpg'),
                         fit: BoxFit.cover,
                        )),
-                /* width: double.infinity,
-                child: Image.asset('assets/images/pxfuel.jpg'), */
+               width: double.infinity,
+                child: Image.asset('assets/images/pxfuel.jpg'),
               ),
               Center(
                 child: Card(

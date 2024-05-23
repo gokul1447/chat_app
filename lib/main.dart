@@ -4,7 +4,7 @@ import 'package:flutter_chat_app/screens/auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_chat_app/screens/chat.dart';
 import 'package:flutter_chat_app/screens/splash.dart';
-import 'package:firebase_core/firebase_core.dart';
+
 import 'firebase_options.dart';
 
 
