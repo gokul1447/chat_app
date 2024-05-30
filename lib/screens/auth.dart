@@ -1,10 +1,10 @@
 import 'dart:io';
 
+import 'package:flutter_chat_app/widgets/user_image_picker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_chat_app/widgets/image_picker.dart';
 
 final _firebase = FirebaseAuth.instance;
 
@@ -18,19 +18,20 @@ class AuthScreen extends StatefulWidget {
 }
 
 class _AuthScreenState extends State<AuthScreen> {
-  File? _selectedImg;
   final _form = GlobalKey<FormState>();
 
   var _isLogin = true;
   var _enteredEmail = '';
   var _enteredPassword = '';
   var _enteredUsername = '';
-  var _isauthenticated = false;
+  File? _selectedImage;
+  var _isAuthenticating = false;
 
   void _submit() async {
     final isValid = _form.currentState!.validate();
 
-    if (!isValid) {
+    if (!isValid || !_isLogin && _selectedImage == null) {
+      // show error message ...
       return;
     }
 
@@ -38,7 +39,7 @@ class _AuthScreenState extends State<AuthScreen> {
 
     try {
       setState(() {
-        _isauthenticated = true;
+        _isAuthenticating = true;
       });
       if (_isLogin) {
         final userCredentials = await _firebase.signInWithEmailAndPassword(
@@ -46,19 +47,22 @@ class _AuthScreenState extends State<AuthScreen> {
       } else {
         final userCredentials = await _firebase.createUserWithEmailAndPassword(
             email: _enteredEmail, password: _enteredPassword);
+
         final storageRef = FirebaseStorage.instance
             .ref()
             .child('user_images')
             .child('${userCredentials.user!.uid}.jpg');
-        await storageRef.putFile(_selectedImg!);
+
+        await storageRef.putFile(_selectedImage!);
         final imageUrl = await storageRef.getDownloadURL();
+
         await FirebaseFirestore.instance
             .collection('users')
             .doc(userCredentials.user!.uid)
             .set({
           'username': _enteredUsername,
           'email': _enteredEmail,
-          'image_Url': imageUrl,
+          'image_url': imageUrl,
         });
       }
     } on FirebaseAuthException catch (error) {
@@ -71,10 +75,6 @@ class _AuthScreenState extends State<AuthScreen> {
           content: Text(error.message ?? 'Authentication failed.'),
         ),
       );
-
-      setState(() {
-        _isauthenticated = false;
-      });
     }
   }
 
@@ -85,31 +85,20 @@ class _AuthScreenState extends State<AuthScreen> {
       body: Center(
         child: SingleChildScrollView(
           child: Column(
-            
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Stack(
-                children: [
-                   Container(
+              Container(
                 margin: const EdgeInsets.only(
                   top: 30,
                   bottom: 20,
                   left: 20,
                   right: 20,
                 ),
-                
-                decoration: const BoxDecoration(
-                  
-                    image: DecorationImage(
-                        image: AssetImage('assets/images/pxfuel.jpg'),
-                        fit: BoxFit.cover,
-                       )),
-               width: double.infinity,
+                width: 200,
                 child: Image.asset('assets/images/pxfuel.jpg'),
               ),
-              Center(
-                child: Card(
-                margin: const EdgeInsets.only(top: 400,left: 400,right: 400),
+              Card(
+                margin: const EdgeInsets.all(20),
                 child: SingleChildScrollView(
                   child: Padding(
                     padding: const EdgeInsets.all(16),
@@ -120,8 +109,8 @@ class _AuthScreenState extends State<AuthScreen> {
                         children: [
                           if (!_isLogin)
                             UserImagePicker(
-                              onPickImage: (pickedImg) {
-                                _selectedImg = pickedImg;
+                              onPickImage: (pickedImage) {
+                                _selectedImage = pickedImage;
                               },
                             ),
                           TextFormField(
@@ -175,7 +164,9 @@ class _AuthScreenState extends State<AuthScreen> {
                             },
                           ),
                           const SizedBox(height: 12),
-                          if (!_isauthenticated)
+                          if (_isAuthenticating)
+                            const CircularProgressIndicator(),
+                          if (!_isAuthenticating)
                             ElevatedButton(
                               onPressed: _submit,
                               style: ElevatedButton.styleFrom(
@@ -185,7 +176,7 @@ class _AuthScreenState extends State<AuthScreen> {
                               ),
                               child: Text(_isLogin ? 'Login' : 'Signup'),
                             ),
-                          if (!_isauthenticated)
+                          if (!_isAuthenticating)
                             TextButton(
                               onPressed: () {
                                 setState(() {
@@ -202,12 +193,6 @@ class _AuthScreenState extends State<AuthScreen> {
                   ),
                 ),
               ),
-                
-              )
-                ],
-              ),
-             
-              
             ],
           ),
         ),

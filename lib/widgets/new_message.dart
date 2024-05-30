@@ -2,17 +2,18 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-class NewMsg extends StatefulWidget {
-  const NewMsg({super.key});
+class NewMessage extends StatefulWidget {
+  const NewMessage({super.key});
 
   @override
-  State<NewMsg> createState() {
-    return _NewMsgState();
+  State<NewMessage> createState() {
+    return _NewMessageState();
   }
 }
 
-class _NewMsgState extends State<NewMsg> {
-  var _messageController = TextEditingController();
+class _NewMessageState extends State<NewMessage> {
+  final _messageController = TextEditingController();
+
   @override
   void dispose() {
     _messageController.dispose();
@@ -20,12 +21,15 @@ class _NewMsgState extends State<NewMsg> {
   }
 
   void _submitMessage() async {
-    
     final enteredMessage = _messageController.text;
 
     if (enteredMessage.trim().isEmpty) {
       return;
     }
+
+    FocusScope.of(context).unfocus();
+    _messageController.clear();
+
     final user = FirebaseAuth.instance.currentUser!;
     final userData = await FirebaseFirestore.instance
         .collection('users')
@@ -34,15 +38,11 @@ class _NewMsgState extends State<NewMsg> {
 
     FirebaseFirestore.instance.collection('chat').add({
       'text': enteredMessage,
-      'time': FieldValue.serverTimestamp(), 
-      'createdAt':Timestamp.now(),
-      'userId': user,
-      'username':userData.data()!['username'] ,
-      'userImage':userData.data()!['img_url']   });
-
-    // send to Firebase
-
-    _messageController.clear();
+      'createdAt': Timestamp.now(),
+      'userId': user.uid,
+      'username': userData.data()!['username'],
+      'userImage': userData.data()!['image_url'],
+    });
   }
 
   @override
@@ -61,12 +61,12 @@ class _NewMsgState extends State<NewMsg> {
             ),
           ),
           IconButton(
-            onPressed: _submitMessage,
+            color: Theme.of(context).colorScheme.primary,
             icon: const Icon(
               Icons.send,
             ),
-            color: Theme.of(context).colorScheme.primary,
-          )
+            onPressed: _submitMessage,
+          ),
         ],
       ),
     );
